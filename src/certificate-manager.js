@@ -18,6 +18,7 @@ class CertificateManager extends EventEmitter {
         this.platform = PlatformDetector.detect();
         this.isMonitoring = false;
         this.watcher = null;
+        this.cronTask = null; // cronタスクを追跡
         
         // プラットフォーム固有の設定
         this.mkcertCommand = this.platform.isWindows ? 'mkcert.exe' : 'mkcert';
@@ -249,7 +250,13 @@ class CertificateManager extends EventEmitter {
     scheduleAutoRenewal(cronPattern = '0 2 * * 0', domains) {
         const cron = require('node-cron');
         
-        const task = cron.schedule(cronPattern, async () => {
+        // 既存のタスクがあれば停止
+        if (this.cronTask) {
+            this.cronTask.stop();
+            this.cronTask = null;
+        }
+        
+        this.cronTask = cron.schedule(cronPattern, async () => {
             try {
                 if (await this.needsRenewal()) {
                     this.emit('auto-renewal-triggered');
@@ -264,9 +271,20 @@ class CertificateManager extends EventEmitter {
         });
 
         this.emit('auto-renewal-scheduled', { cronPattern });
-        task.start();
+        this.cronTask.start();
         
-        return task;
+        return this.cronTask;
+    }
+
+    /**
+     * 自動更新スケジュールを停止
+     */
+    stopAutoRenewal() {
+        if (this.cronTask) {
+            this.cronTask.stop();
+            this.cronTask = null;
+            this.emit('auto-renewal-stopped');
+        }
     }
 
     /**
@@ -289,7 +307,9 @@ class CertificateManager extends EventEmitter {
      */
     destroy() {
         this.stopMonitoring();
+        this.stopAutoRenewal();
         this.removeAllListeners();
+        console.log('🧹 CertificateManager: リソースをクリーンアップしました');
     }
 }
 
