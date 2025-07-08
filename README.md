@@ -24,8 +24,8 @@ npm install mkcert-auto-renewer
 ### gitサブモジュールとして
 
 ```bash
-git submodule add https://github.com/kakeru-ikeda/mkcert-auto-renewer.git lib/mkcert-auto-renewer
-cd lib/mkcert-auto-renewer
+git submodule add https://github.com/kakeru-ikeda/mkcert-auto-renewer.git mkcert-auto-renewer
+cd mkcert-auto-renewer
 npm install
 ```
 
