@@ -265,6 +265,74 @@ new MkcertAutoRenewer(options)
 - cron連携
 - 手動インストール手順提供
 
+## 複数アプリケーションでの使用方法
+
+同一サーバー上で複数のアプリケーション（例：フロントエンドとバックエンド）がそれぞれExpressサーバーを立てる場合、証明書の管理方法に注意が必要です。
+
+### 推奨設定：共有証明書ディレクトリの使用
+
+```javascript
+// すべてのアプリケーションで共通設定を使用
+const renewer = new MkcertAutoRenewer({
+    certPath: '/shared/certs',        // サーバー上の共有ディレクトリ
+    certName: 'shared-certificate'    // 共通の証明書名
+});
+```
+
+### 証明書管理の一元化
+
+```javascript
+// メインアプリケーション側（証明書管理担当）
+const renewer = new MkcertAutoRenewer({
+    certPath: '/shared/certs'
+});
+// 証明書の生成と自動更新を設定
+await renewer.generate();
+renewer.scheduleAutoRenewal('0 2 * * 0');
+
+// 他のアプリケーション側（証明書読み込みのみ）
+const renewer = new MkcertAutoRenewer({
+    certPath: '/shared/certs'
+});
+// 証明書の生成や自動更新は設定しない
+// 既存の証明書を読み込むだけ
+const httpsOptions = await renewer.getHttpsOptions();
+```
+
+### 環境変数による一元管理
+
+```bash
+# すべてのアプリケーションで共通の環境変数を設定
+export HTTPS_CERT_PATH="/shared/certs"
+export HTTPS_CERT_NAME="shared-certificate"
+```
+
+### 証明書管理の責務に関する考慮事項
+
+証明書管理（特に自動更新cronジョブ）の責務をどのサービスに配置するかは、プロジェクトの規模や構成によって判断が必要です：
+
+#### バックエンドに組み込む場合（推奨ケース）
+- 小～中規模のプロジェクト
+- 開発環境や単一インスタンスの本番環境
+- バックエンドサービスの稼働率が高い場合
+- シンプルな構成を優先したい場合
+
+```javascript
+// バックエンドアプリ
+const backendRenewer = new MkcertAutoRenewer({ certPath: '/shared/certs' });
+backendRenewer.scheduleAutoRenewal(); // 自動更新はバックエンドのみで設定
+```
+
+#### 独立したサービスに分離すべき場合
+- 大規模な本番環境
+- マイクロサービスアーキテクチャ採用時
+- 複数インスタンスでの水平スケーリング環境
+- バックエンドが頻繁に再起動される場合
+
+このような場合は、証明書管理用の専用マイクロサービスや定期的に実行されるスクリプトの作成を検討してください。
+
+これにより、すべてのアプリケーションが同じ証明書を参照するようになり、更新の競合やリソースの無駄遣いを防ぎます。
+
 ## 統合例
 
 ### Express.js + WebSocket
