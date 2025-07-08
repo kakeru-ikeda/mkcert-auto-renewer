@@ -12,6 +12,7 @@ Windows、macOS、Linuxで動作し、Express.js、Webpack Dev Server、Next.js�
 - 🔧 **簡単統合**: Express.js、Webpack、Next.js等への統合
 - 📋 **CLIツール**: コマンドラインからの操作
 - 🎯 **gitサブモジュール対応**: プロジェクトに組み込み可能
+- 📝 **TypeScript対応**: 型定義ファイル (.d.ts) を同梱
 
 ## インストール
 
@@ -279,6 +280,38 @@ const renewer = new MkcertAutoRenewer({
 });
 ```
 
+### TypeScriptでの使用例
+
+```typescript
+import MkcertAutoRenewer from 'mkcert-auto-renewer';
+import * as express from 'express';
+
+// 基本的な使用
+const renewer = new MkcertAutoRenewer({
+    certPath: './certs',
+    certName: 'localhost+3',
+    domains: ['localhost', '127.0.0.1', '::1']
+});
+
+// 証明書生成
+async function setup() {
+    await renewer.generate(['localhost', '127.0.0.1', '::1']);
+    
+    // Express.jsと統合
+    const app = express();
+    const httpsOptions = await renewer.getExpressHttpsOptions();
+    
+    if (httpsOptions.success) {
+        const server = await renewer.createHttpsServer(app);
+        server.listen(3443, () => {
+            console.log('🚀 HTTPSサーバーがポート3443で起動しました');
+        });
+    }
+}
+
+setup().catch(console.error);
+```
+
 ### 証明書管理の一元化
 
 ```javascript
@@ -399,6 +432,37 @@ module.exports = async () => {
    ```bash
    sudo chown -R $USER:$USER certs/
    ```
+
+### サブモジュールとして使用する場合のTypeScript対応
+
+TypeScriptプロジェクトで`mkcert-auto-renewer`をGitサブモジュールとして使用する場合は、以下のように`tsconfig.json`を設定することで型定義を正しく認識させることができます：
+
+```json
+{
+  "compilerOptions": {
+    // ...その他の設定
+    "baseUrl": ".",
+    "paths": {
+      "mkcert-auto-renewer": ["./mkcert-auto-renewer/src/index.js"],
+      "mkcert-auto-renewer/*": ["./mkcert-auto-renewer/src/*"]
+    },
+    "typeRoots": [
+      "./node_modules/@types",
+      "./mkcert-auto-renewer/types"
+    ]
+  }
+}
+```
+
+または、プロジェクトのルートディレクトリに型定義参照ファイルを追加することもできます：
+
+```typescript
+// src/types/mkcert-auto-renewer.d.ts
+declare module 'mkcert-auto-renewer' {
+  import MkcertAutoRenewer = require('../../mkcert-auto-renewer/types');
+  export = MkcertAutoRenewer;
+}
+```
 
 ### デバッグ
 

@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Cross-platform mkcert certificate auto-renewal system for development environments",
   "main": "src/index.js",
+  "types": "types/index.d.ts",
   "bin": {
     "mkcert-renewer": "src/cli.js"
   },
