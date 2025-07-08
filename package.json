@@ -11,7 +11,8 @@
     "generate": "node src/cli.js generate",
     "monitor": "node src/cli.js monitor",
     "install-deps": "node src/cli.js install",
-    "test": "node test/test.js"
+    "test": "node test/test.js",
+    "test-cli": "node src/cli.js check && node src/cli.js generate"
   },
   "keywords": [
     "mkcert",
